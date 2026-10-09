@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Precision Compass</string>
+    <string name="heading_north">N</string>
+    <string name="heading_east">E</string>
+    <string name="heading_south">S</string>
+    <string name="heading_west">W</string>
+    <string name="heading_northeast">NE</string>
+    <string name="heading_northwest">NW</string>
+    <string name="heading_southeast">SE</string>
+    <string name="heading_southwest">SW</string>
+    <string name="true_north">True North</string>
+    <string name="magnetic_north">Magnetic North</string>
+    <string name="sensor_unavailable_title">Sensor Unavailable</string>
+    <string name="sensor_unavailable_desc">This device does not have hardware compass (magnetometer or rotation vector) sensors. Telemetry simulation is active for previewing.</string>
+    <string name="calibration_needed_title">Compass Calibration</string>
+    <string name="calibration_needed_desc">Wave your device in a figure-8 motion to calibrate the magnetometer.</string>
+    <string name="pitch">Pitch</string>
+    <string name="roll">Roll</string>
+    <string name="accuracy_high">High</string>
+    <string name="accuracy_medium">Medium</string>
+    <string name="accuracy_low">Low</string>
+    <string name="accuracy_unreliable">Uncalibrated</string>
+</resources>
