@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/compass_launcher_icon_1791516433964"
+        android:drawable="@drawable/app_icon"
         android:gravity="center" />
 </layer-list>

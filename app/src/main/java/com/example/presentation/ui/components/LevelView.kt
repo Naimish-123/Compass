@@ -162,15 +162,21 @@ private fun HorizontalSurfaceLevel(
     accentColor: Color,
     modifier: Modifier = Modifier
 ) {
-    // Smooth moving bubble offsets
+    // Snappy bubble offsets that settle instantly without floating drift
     val animatedRoll by animateFloatAsState(
         targetValue = roll,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessHigh
+        ),
         label = "levelRoll"
     )
     val animatedPitch by animateFloatAsState(
         targetValue = pitch,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessHigh
+        ),
         label = "levelPitch"
     )
 
@@ -297,7 +303,10 @@ private fun VerticalWallLevel(
 ) {
     val animatedRoll by animateFloatAsState(
         targetValue = roll,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessHigh
+        ),
         label = "wallRoll"
     )
 

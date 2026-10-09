@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "fwcd.kotlin",
+    "vscjava.vscode-gradle",
+    "adelphes.android-dev-ext",
+    "redhat.vscode-xml",
+    "usernamehw.errorlens",
+    "tamasfe.even-better-toml"
+  ]
+}

@@ -44,12 +44,12 @@ fun HyperOSCompassDial(
     onDialClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Smooth physical-spring rotation angle
+    // Snappy physical-spring rotation angle with instant stopping response
     val animatedRotation by animateFloatAsState(
         targetValue = -uiState.continuousVisualAngle,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
+            stiffness = Spring.StiffnessHigh
         ),
         label = "hyperOSCompassRotation"
     )

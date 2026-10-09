@@ -29,7 +29,9 @@ class CompassSensorManager(
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
 
-    private val rotationVectorSensor: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+    private val rotationVectorSensor: Sensor? =
+        sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            ?: sensorManager?.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR)
     private val accelerometerSensor: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val magnetometerSensor: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
@@ -40,7 +42,8 @@ class CompassSensorManager(
         CompassData(
             isSensorAvailable = isHardwareSensorAvailable,
             sensorType = when {
-                rotationVectorSensor != null -> "Rotation Vector (Fused 9-Axis)"
+                rotationVectorSensor?.type == Sensor.TYPE_ROTATION_VECTOR -> "Rotation Vector (Fused 9-Axis)"
+                rotationVectorSensor?.type == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> "Geomagnetic Rotation Vector"
                 isHardwareSensorAvailable -> "Accelerometer + Magnetometer"
                 else -> "Hardware Sensor Unavailable"
             }
@@ -59,9 +62,6 @@ class CompassSensorManager(
     // Rotation matrix calculations
     private val rotationMatrix = FloatArray(9)
     private val orientationAngles = FloatArray(3)
-
-    // Low-pass filter smoothing coefficient (0.0 < alpha <= 1.0)
-    private val alpha = 0.15f
 
     // Current sensor accuracy
     private var currentAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
@@ -90,7 +90,7 @@ class CompassSensorManager(
             )
             // Also register magnetometer if present to measure magnetic field strength
             magnetometerSensor?.let {
-                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
             }
         } else {
             accelerometerSensor?.let {
@@ -120,8 +120,9 @@ class CompassSensorManager(
 
     override fun onSensorChanged(event: SensorEvent) {
         when (event.sensor.type) {
-            Sensor.TYPE_ROTATION_VECTOR -> {
-                // High-precision rotation vector sensor
+            Sensor.TYPE_ROTATION_VECTOR,
+            Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> {
+                // High-precision rotation vector sensor (gyro-fused or geomagnetic)
                 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
                 SensorManager.getOrientation(rotationMatrix, orientationAngles)
 
@@ -133,12 +134,18 @@ class CompassSensorManager(
                 val pitchDeg = Math.toDegrees(pitchRad.toDouble()).toFloat()
                 val rollDeg = Math.toDegrees(rollRad.toDouble()).toFloat()
 
+                val sType = if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                    "Rotation Vector (Fused 9-Axis)"
+                } else {
+                    "Geomagnetic Rotation Vector"
+                }
+
                 _compassDataFlow.value = CompassData(
                     azimuthDegrees = azimuthDeg,
                     pitchDegrees = pitchDeg,
                     rollDegrees = rollDeg,
                     accuracy = currentAccuracy,
-                    sensorType = "Rotation Vector (Fused)",
+                    sensorType = sType,
                     magneticFieldStrength = currentFieldStrength,
                     isSensorAvailable = true,
                     isSimulated = false,
@@ -147,8 +154,8 @@ class CompassSensorManager(
             }
 
             Sensor.TYPE_ACCELEROMETER -> {
-                // Low-pass filter for gravity values
-                applyLowPassFilter(event.values, gravityValues)
+                // Adaptive low-pass filter for gravity values: zero lag during movement, stable at rest
+                applyAdaptiveLowPassFilter(event.values, gravityValues)
                 hasGravity = true
 
                 if (hasGeomagnetic) {
@@ -157,8 +164,8 @@ class CompassSensorManager(
             }
 
             Sensor.TYPE_MAGNETIC_FIELD -> {
-                // Low-pass filter for geomagnetic values
-                applyLowPassFilter(event.values, geomagneticValues)
+                // Adaptive low-pass filter for geomagnetic values: zero lag during movement, stable at rest
+                applyAdaptiveLowPassFilter(event.values, geomagneticValues)
                 hasGeomagnetic = true
 
                 // Calculate total magnetic flux density B = sqrt(Bx² + By² + Bz²)
@@ -175,15 +182,29 @@ class CompassSensorManager(
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-        if (sensor.type == Sensor.TYPE_ROTATION_VECTOR || sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
+        if (sensor.type == Sensor.TYPE_ROTATION_VECTOR ||
+            sensor.type == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR ||
+            sensor.type == Sensor.TYPE_MAGNETIC_FIELD
+        ) {
             currentAccuracy = accuracy
             _compassDataFlow.value = _compassDataFlow.value.copy(accuracy = accuracy)
         }
     }
 
-    private fun applyLowPassFilter(input: FloatArray, output: FloatArray) {
+    /**
+     * Adaptive low-pass filter that dynamically increases response factor during active rotation
+     * (snapping directly to target value with zero lag) and smoothly dampens micro-noise when stationary.
+     */
+    private fun applyAdaptiveLowPassFilter(input: FloatArray, output: FloatArray) {
         for (i in input.indices) {
-            output[i] = output[i] + alpha * (input[i] - output[i])
+            val delta = kotlin.math.abs(input[i] - output[i])
+            val dynamicAlpha = when {
+                delta > 0.8f -> 0.95f
+                delta > 0.3f -> 0.85f
+                delta > 0.08f -> 0.65f
+                else -> 0.40f
+            }
+            output[i] = output[i] + dynamicAlpha * (input[i] - output[i])
         }
     }
 
