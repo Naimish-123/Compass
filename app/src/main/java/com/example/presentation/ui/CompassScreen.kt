@@ -1,21 +1,19 @@
 package com.example.presentation.ui
 
 import android.Manifest
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,20 +21,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CompassCalibration
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Sensors
-import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -46,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -55,21 +49,26 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.domain.haptics.CompassHapticManager
+import com.example.presentation.CompassMode
 import com.example.presentation.CompassViewModel
-import com.example.presentation.ui.components.BearingLockCard
 import com.example.presentation.ui.components.CalibrationDialog
-import com.example.presentation.ui.components.CompassDial
-import com.example.presentation.ui.components.HeadingTelemetryDisplay
-import com.example.presentation.ui.components.SensorUnavailableBanner
-import com.example.ui.theme.CardinalCyan
-import com.example.ui.theme.CompassNeedleRed
-import com.example.ui.theme.SlateBorder
-import com.example.ui.theme.SlateDark
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.presentation.ui.components.DirectionView
+import com.example.presentation.ui.components.HyperOSModeSwitcher
+import com.example.presentation.ui.components.HyperOSSettingsSheet
+import com.example.presentation.ui.components.LevelView
+import com.example.ui.theme.HyperOSBlack
+import com.example.ui.theme.HyperOSTextMuted
+import com.example.ui.theme.HyperOSTextPrimary
+import com.example.ui.theme.HyperOSTextSecondary
+import com.example.ui.theme.XiaomiRed
 
+/**
+ * Xiaomi HyperOS Compass Screen (Version 17.1.4.1 aesthetic).
+ * Strictly separates the Direction function and Level function.
+ * When on Direction: only shows Direction telemetry and dial.
+ * When on Level: only shows Spirit Level and tilt measurements.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompassScreen(
@@ -80,16 +79,19 @@ fun CompassScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Subtle tactile haptic feedback using VibratorManager
-    val hapticManager = remember(context) { com.example.domain.haptics.CompassHapticManager(context) }
+    // Subtle tactile haptic feedback manager
+    val hapticManager = remember(context) { CompassHapticManager(context) }
 
     LaunchedEffect(viewModel, hapticManager) {
         viewModel.onCardinalCrossed = { direction ->
             hapticManager.performCardinalHaptic(direction)
         }
+        viewModel.onLevelAligned = {
+            hapticManager.performLevelAlignedHaptic()
+        }
     }
 
-    // Permission launcher for Location (used to calculate True North magnetic declination)
+    // Permission launcher for Location (used to calculate GPS coordinates and True North declination)
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -119,173 +121,140 @@ fun CompassScreen(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .testTag("compass_screen_scaffold"),
-        containerColor = SlateDark,
+            .testTag("hyperos_compass_scaffold"),
+        containerColor = HyperOSBlack,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Sensors,
-                            contentDescription = null,
-                            tint = CompassNeedleRed,
-                            modifier = Modifier.size(20.dp)
+                    Text(
+                        text = "Compass",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = HyperOSTextPrimary
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "PRECISION COMPASS",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 2.sp,
-                                color = TextPrimary,
-                                fontSize = 15.sp
-                            )
-                        )
-                    }
+                    )
                 },
                 actions = {
-                    // Haptics toggle
-                    IconButton(
-                        onClick = { viewModel.toggleHaptics() },
-                        modifier = Modifier.testTag("toggle_haptics_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Vibration,
-                            contentDescription = if (uiState.isHapticsEnabled) "Haptics Enabled" else "Haptics Disabled",
-                            tint = if (uiState.isHapticsEnabled) CardinalCyan else TextMuted
-                        )
-                    }
-
-                    // Location / Declination trigger
-                    IconButton(
-                        onClick = {
-                            locationPermissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    // Sync GPS Location button if location is not yet resolved
+                    if (!uiState.locationInfo.hasLocation) {
+                        IconButton(
+                            onClick = {
+                                locationPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
                                 )
+                            },
+                            modifier = Modifier.testTag("hyperos_location_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = "Enable Location",
+                                tint = HyperOSTextSecondary,
+                                modifier = Modifier.size(20.dp)
                             )
-                        },
-                        modifier = Modifier.testTag("request_location_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = "Sync True North Location",
-                            tint = if (uiState.locationInfo.hasLocation) CardinalCyan else TextSecondary
-                        )
+                        }
                     }
 
-                    // Calibration trigger
+                    // Xiaomi HyperOS Enlarged Three-Dot Menu (version 17.1.x feature)
                     IconButton(
-                        onClick = { viewModel.showCalibrationDialog() },
-                        modifier = Modifier.testTag("open_calibration_button")
+                        onClick = { viewModel.openSettingsSheet() },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("hyperos_more_menu_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CompassCalibration,
-                            contentDescription = "Calibrate Compass",
-                            tint = TextSecondary
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Settings",
+                            tint = HyperOSTextPrimary,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = SlateDark,
-                    titleContentColor = TextPrimary
+                    containerColor = HyperOSBlack,
+                    titleContentColor = HyperOSTextPrimary
                 )
             )
+        },
+        bottomBar = {
+            // Xiaomi HyperOS Floating Pill Switcher ("Direction" | "Level")
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(HyperOSBlack)
+                    .padding(bottom = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                HyperOSModeSwitcher(
+                    currentMode = uiState.currentMode,
+                    onModeSelected = { mode ->
+                        viewModel.setMode(mode)
+                    }
+                )
+            }
         }
     ) { innerPadding ->
-        BoxWithConstraints(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .background(HyperOSBlack)
+                .padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val screenMaxWidth = maxWidth
-            val isWideScreen = screenMaxWidth > 600.dp
-            val scrollState = rememberScrollState()
-
-            Column(
+            // Main View Area: Exclusively Direction OR Level
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(scrollState)
                     .widthIn(max = 600.dp)
-                    .align(Alignment.TopCenter)
-                    .padding(bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
             ) {
-                // Sensor Unavailable or Demo Simulation Notice
-                SensorUnavailableBanner(
-                    isHardwareAvailable = uiState.isHardwareAvailable,
-                    isSimulated = uiState.isSimulated,
-                    currentHeading = uiState.displayHeading,
-                    onManualHeadingChange = { viewModel.setManualHeading(it) },
-                    onToggleSimulation = { viewModel.toggleSimulation() }
-                )
+                AnimatedContent(
+                    targetState = uiState.currentMode,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(220)) togetherWith
+                                fadeOut(animationSpec = tween(220))
+                    },
+                    label = "modeTransition"
+                ) { mode ->
+                    when (mode) {
+                        CompassMode.DIRECTION -> {
+                            // Strictly Direction Function
+                            DirectionView(
+                                uiState = uiState,
+                                onDialClick = { viewModel.toggleBearingLock() },
+                                onClearBearing = { viewModel.clearLockedBearing() },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // The Compass Rose / Dial
-                val dialSize = if (isWideScreen) 380.dp else (screenMaxWidth * 0.88f)
-                Box(
-                    modifier = Modifier
-                        .size(dialSize)
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CompassDial(
-                        uiState = uiState,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Real-time numeric telemetry & degree readout
-                HeadingTelemetryDisplay(
-                    uiState = uiState,
-                    onToggleTrueNorth = { viewModel.toggleTrueNorth() },
-                    onShowCalibration = { viewModel.showCalibrationDialog() }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Course Bearing Locking Card
-                BearingLockCard(
-                    uiState = uiState,
-                    onToggleLock = { viewModel.toggleBearingLock() },
-                    onClearLock = { viewModel.clearLockedBearing() }
-                )
-
-                // Location coordinates if available
-                if (uiState.locationInfo.hasLocation) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = SlateSurface.copy(alpha = 0.5f),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                        modifier = Modifier.padding(horizontal = 24.dp)
-                    ) {
-                        Text(
-                            text = String.format(
-                                "%.4f° %s, %.4f° %s • Elev %.0fm",
-                                Math.abs(uiState.locationInfo.latitude),
-                                if (uiState.locationInfo.latitude >= 0) "N" else "S",
-                                Math.abs(uiState.locationInfo.longitude),
-                                if (uiState.locationInfo.longitude >= 0) "E" else "W",
-                                uiState.locationInfo.altitudeMeters
-                            ),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = TextMuted,
-                                fontSize = 11.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
+                        CompassMode.LEVEL -> {
+                            // Strictly Spirit Level Function
+                            LevelView(
+                                uiState = uiState,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
-    // Modal figure-8 calibration guide
+    // Xiaomi HyperOS 17.1.4.1 Settings Bottom Sheet
+    if (uiState.showSettingsSheet) {
+        HyperOSSettingsSheet(
+            uiState = uiState,
+            onToggleTrueNorth = { viewModel.toggleTrueNorth() },
+            onToggleHaptics = { viewModel.toggleHaptics() },
+            onOpenCalibration = { viewModel.showCalibrationDialog() },
+            onToggleSimulation = { viewModel.toggleSimulation() },
+            onDismiss = { viewModel.dismissSettingsSheet() }
+        )
+    }
+
+    // Modal Figure-8 Calibration Guide
     if (uiState.showCalibrationDialog) {
         CalibrationDialog(
             accuracy = uiState.accuracy,

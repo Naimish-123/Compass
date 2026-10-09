@@ -52,6 +52,32 @@ class CompassHapticManager(private val context: Context) {
         }
     }
 
+    /**
+     * Emits a crisp tactile snap when the spirit level aligns at 0°.
+     */
+    fun performLevelAlignedHaptic() {
+        val vib = vibrator ?: return
+        if (!vib.hasVibrator()) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastHapticTime < 250L) return
+        lastHapticTime = now
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                    vib.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK)) {
+                    val effect = VibrationEffect.startComposition()
+                        .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.7f)
+                        .compose()
+                    vib.vibrate(effect)
+                    return
+                }
+            } catch (_: Exception) {}
+        }
+        playOneShotHaptic(vib, isNorth = true)
+    }
+
     private fun playModernPrimitiveHaptic(vib: Vibrator, isNorth: Boolean) {
         try {
             val primitive = if (isNorth) {

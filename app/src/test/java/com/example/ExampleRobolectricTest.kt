@@ -67,4 +67,11 @@ class ExampleRobolectricTest {
         hapticManager.performCardinalHaptic(CardinalDirection.SOUTH)
         hapticManager.performCardinalHaptic(CardinalDirection.WEST)
     }
+
+    @Test
+    fun `launch MainActivity with Robolectric`() {
+        val controller = org.robolectric.Robolectric.buildActivity(MainActivity::class.java).setup()
+        val activity = controller.get()
+        org.junit.Assert.assertNotNull(activity)
+    }
 }

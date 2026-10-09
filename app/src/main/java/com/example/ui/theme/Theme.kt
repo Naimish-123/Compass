@@ -5,24 +5,24 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val CompassColorScheme = darkColorScheme(
-    primary = CompassNeedleRed,
+private val HyperOSColorScheme = darkColorScheme(
+    primary = XiaomiRed,
     onPrimary = Color.White,
-    primaryContainer = SlateSurfaceVariant,
-    onPrimaryContainer = TextPrimary,
-    secondary = CardinalCyan,
-    onSecondary = SlateDark,
-    secondaryContainer = SlateSurface,
-    onSecondaryContainer = TextPrimary,
-    tertiary = LevelBubbleGreen,
+    primaryContainer = HyperOSSurfaceElevated,
+    onPrimaryContainer = HyperOSTextPrimary,
+    secondary = HyperOSTextSecondary,
+    onSecondary = HyperOSBlack,
+    secondaryContainer = HyperOSSurfacePill,
+    onSecondaryContainer = HyperOSTextPrimary,
+    tertiary = XiaomiRed,
     onTertiary = Color.White,
-    background = SlateDark,
-    onBackground = TextPrimary,
-    surface = SlateBackground,
-    onSurface = TextPrimary,
-    surfaceVariant = SlateSurface,
-    onSurfaceVariant = TextSecondary,
-    outline = SlateBorder
+    background = HyperOSBlack,
+    onBackground = HyperOSTextPrimary,
+    surface = HyperOSBlack,
+    onSurface = HyperOSTextPrimary,
+    surfaceVariant = HyperOSSurfaceElevated,
+    onSurfaceVariant = HyperOSTextSecondary,
+    outline = HyperOSBorder
 )
 
 @Composable
@@ -31,9 +31,9 @@ fun MyApplicationTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    // Compass apps are inherently designed in sleek high-contrast dark mode for night visibility and OLED clarity
+    // Xiaomi HyperOS Compass features an OLED pitch-black aesthetic
     MaterialTheme(
-        colorScheme = CompassColorScheme,
+        colorScheme = HyperOSColorScheme,
         typography = Typography,
         content = content
     )

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 class CompassViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -24,9 +25,13 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     val uiState: StateFlow<CompassUiState> = _uiState.asStateFlow()
 
     private var previousCardinal: CardinalDirection? = null
+    private var previousIsLevelZero = false
 
     // Callback for cardinal tick haptics with direction
     var onCardinalCrossed: ((CardinalDirection) -> Unit)? = null
+
+    // Callback when spirit level hits 0° alignment
+    var onLevelAligned: (() -> Unit)? = null
 
     init {
         // Collect sensor data flow
@@ -89,7 +94,7 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                         cardinal == CardinalDirection.SOUTH ||
                         cardinal == CardinalDirection.WEST)) {
                 previousCardinal = cardinal
-                if (state.isHapticsEnabled) {
+                if (state.isHapticsEnabled && state.currentMode == CompassMode.DIRECTION) {
                     onCardinalCrossed?.invoke(cardinal)
                 }
             } else if (cardinal != previousCardinal) {
@@ -104,7 +109,24 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 dev
             }
 
-            val isLevel = abs(data.pitchDegrees) < 2.0f && abs(data.rollDegrees) < 2.0f
+            val isVertical = abs(data.pitchDegrees) > 45f
+            val totalTilt = if (isVertical) {
+                abs(data.rollDegrees)
+            } else {
+                sqrt(data.pitchDegrees * data.pitchDegrees + data.rollDegrees * data.rollDegrees)
+            }
+
+            val isLevelZero = if (isVertical) {
+                abs(data.rollDegrees) < 0.6f
+            } else {
+                abs(data.pitchDegrees) < 0.6f && abs(data.rollDegrees) < 0.6f
+            }
+
+            // Level alignment haptic feedback
+            if (isLevelZero && !previousIsLevelZero && state.currentMode == CompassMode.LEVEL && state.isHapticsEnabled) {
+                onLevelAligned?.invoke()
+            }
+            previousIsLevelZero = isLevelZero
 
             // Auto suggest calibration if accuracy is unreliable or low on real sensor
             val suggestCalibration = !data.isSimulated && data.isSensorAvailable &&
@@ -117,7 +139,9 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 continuousVisualAngle = newContinuousAngle,
                 pitch = data.pitchDegrees,
                 roll = data.rollDegrees,
-                isLevel = isLevel,
+                totalTilt = totalTilt,
+                isLevelZero = isLevelZero,
+                isLevel = isLevelZero,
                 accuracy = data.accuracy,
                 sensorType = data.sensorType,
                 magneticFieldStrength = data.magneticFieldStrength,
@@ -129,6 +153,10 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 showCalibrationDialog = if (suggestCalibration) true else state.showCalibrationDialog
             )
         }
+    }
+
+    fun setMode(mode: CompassMode) {
+        _uiState.update { it.copy(currentMode = mode) }
     }
 
     fun toggleTrueNorth() {
@@ -164,6 +192,14 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
     fun dismissCalibrationDialog() {
         _uiState.update { it.copy(showCalibrationDialog = false) }
+    }
+
+    fun openSettingsSheet() {
+        _uiState.update { it.copy(showSettingsSheet = true) }
+    }
+
+    fun dismissSettingsSheet() {
+        _uiState.update { it.copy(showSettingsSheet = false) }
     }
 
     fun toggleSimulation() {
