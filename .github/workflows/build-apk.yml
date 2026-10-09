@@ -35,9 +35,13 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Rename APK to Compass.apk
+        run: |
+          find app/build/outputs/apk/debug/ -name "*.apk" -exec mv {} app/build/outputs/apk/debug/Compass.apk \;
+
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: precision-compass-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: Compass
+          path: app/build/outputs/apk/debug/Compass.apk
           retention-days: 14
