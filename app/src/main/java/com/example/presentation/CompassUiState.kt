@@ -22,5 +22,6 @@ data class CompassUiState(
     val cardinalDirection: CardinalDirection = CardinalDirection.NORTH,
     val sixteenPointDirection: String = "N",
     val showCalibrationDialog: Boolean = false,
+    val isHapticsEnabled: Boolean = true,
     val locationInfo: CompassLocationProvider.LocationInfo = CompassLocationProvider.LocationInfo()
 )

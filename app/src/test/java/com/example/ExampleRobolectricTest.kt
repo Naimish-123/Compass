@@ -57,4 +57,14 @@ class ExampleRobolectricTest {
         assertTrue(CardinalDirection.isPrimaryCardinal(359.5f, tolerance = 1.0f))
         assertTrue(CardinalDirection.isPrimaryCardinal(89.8f, tolerance = 1.0f))
     }
+
+    @Test
+    fun `haptic manager safely executes without throwing`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val hapticManager = com.example.domain.haptics.CompassHapticManager(context)
+        hapticManager.performCardinalHaptic(CardinalDirection.NORTH)
+        hapticManager.performCardinalHaptic(CardinalDirection.EAST)
+        hapticManager.performCardinalHaptic(CardinalDirection.SOUTH)
+        hapticManager.performCardinalHaptic(CardinalDirection.WEST)
+    }
 }

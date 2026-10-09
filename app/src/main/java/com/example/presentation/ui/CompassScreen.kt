@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -79,29 +80,12 @@ fun CompassScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Setup Haptic feedback on cardinal point crossing
-    val vibrator = remember(context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-    }
+    // Subtle tactile haptic feedback using VibratorManager
+    val hapticManager = remember(context) { com.example.domain.haptics.CompassHapticManager(context) }
 
-    LaunchedEffect(viewModel, vibrator) {
-        viewModel.onCardinalCrossed = {
-            vibrator?.let { vib ->
-                if (vib.hasVibrator()) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vib.vibrate(VibrationEffect.createOneShot(18, VibrationEffect.DEFAULT_AMPLITUDE))
-                    } else {
-                        @Suppress("DEPRECATION")
-                        vib.vibrate(18)
-                    }
-                }
-            }
+    LaunchedEffect(viewModel, hapticManager) {
+        viewModel.onCardinalCrossed = { direction ->
+            hapticManager.performCardinalHaptic(direction)
         }
     }
 
@@ -160,6 +144,18 @@ fun CompassScreen(
                     }
                 },
                 actions = {
+                    // Haptics toggle
+                    IconButton(
+                        onClick = { viewModel.toggleHaptics() },
+                        modifier = Modifier.testTag("toggle_haptics_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Vibration,
+                            contentDescription = if (uiState.isHapticsEnabled) "Haptics Enabled" else "Haptics Disabled",
+                            tint = if (uiState.isHapticsEnabled) CardinalCyan else TextMuted
+                        )
+                    }
+
                     // Location / Declination trigger
                     IconButton(
                         onClick = {

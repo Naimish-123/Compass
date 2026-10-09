@@ -25,8 +25,8 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
     private var previousCardinal: CardinalDirection? = null
 
-    // Callback for cardinal tick haptics
-    var onCardinalCrossed: (() -> Unit)? = null
+    // Callback for cardinal tick haptics with direction
+    var onCardinalCrossed: ((CardinalDirection) -> Unit)? = null
 
     init {
         // Collect sensor data flow
@@ -89,7 +89,9 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                         cardinal == CardinalDirection.SOUTH ||
                         cardinal == CardinalDirection.WEST)) {
                 previousCardinal = cardinal
-                onCardinalCrossed?.invoke()
+                if (state.isHapticsEnabled) {
+                    onCardinalCrossed?.invoke(cardinal)
+                }
             } else if (cardinal != previousCardinal) {
                 previousCardinal = cardinal
             }
@@ -166,6 +168,10 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
     fun toggleSimulation() {
         sensorManager.toggleSimulation()
+    }
+
+    fun toggleHaptics() {
+        _uiState.update { it.copy(isHapticsEnabled = !it.isHapticsEnabled) }
     }
 
     fun setManualHeading(degrees: Float) {
