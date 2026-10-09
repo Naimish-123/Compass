@@ -69,7 +69,6 @@ class CompassSensorManager(
 
     // Simulation job for testing or when sensors are missing
     private var simulationJob: Job? = null
-    private var isSimulationActive = false
 
     /**
      * Registers the appropriate hardware sensor listeners to begin receiving updates.
@@ -226,7 +225,6 @@ class CompassSensorManager(
      */
     fun startSimulation(isPermanentFallback: Boolean = false) {
         if (simulationJob?.isActive == true) return
-        isSimulationActive = true
 
         simulationJob = externalScope.launch {
             var currentHeading = 35.0f
@@ -256,21 +254,9 @@ class CompassSensorManager(
         }
     }
 
-    /**
-     * Manually offsets simulated azimuth (e.g., from gesture controls in preview).
-     */
-    fun setManualAzimuth(degrees: Float) {
-        val normalized = ((degrees % 360f) + 360f) % 360f
-        _compassDataFlow.value = _compassDataFlow.value.copy(
-            azimuthDegrees = normalized,
-            isSimulated = true
-        )
-    }
-
     fun stopSimulation() {
         simulationJob?.cancel()
         simulationJob = null
-        isSimulationActive = false
     }
 
     fun toggleSimulation() {

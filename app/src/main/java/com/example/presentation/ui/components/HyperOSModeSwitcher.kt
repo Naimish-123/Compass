@@ -7,18 +7,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChangeHistory
-import androidx.compose.material.icons.filled.CropLandscape
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.HorizontalRule
 import androidx.compose.material.icons.filled.PanoramaHorizontal
-import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,10 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.CompassMode
-import com.example.ui.theme.HyperOSTextMuted
 import com.example.ui.theme.HyperOSTextPrimary
 import com.example.ui.theme.HyperOSTextSecondary
-import com.example.ui.theme.XiaomiRed
 
 /**
  * Xiaomi HyperOS signature floating segmented mode switcher.

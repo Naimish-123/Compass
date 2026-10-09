@@ -19,7 +19,6 @@ data class CompassUiState(
     val roll: Float = 0f,
     val totalTilt: Float = 0f,
     val isLevelZero: Boolean = false,
-    val isLevel: Boolean = false,
     val accuracy: Int = 3,
     val sensorType: String = "Rotation Vector",
     val magneticFieldStrength: Float = 45f,

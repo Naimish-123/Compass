@@ -141,7 +141,6 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 roll = data.rollDegrees,
                 totalTilt = totalTilt,
                 isLevelZero = isLevelZero,
-                isLevel = isLevelZero,
                 accuracy = data.accuracy,
                 sensorType = data.sensorType,
                 magneticFieldStrength = data.magneticFieldStrength,
@@ -208,10 +207,6 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
     fun toggleHaptics() {
         _uiState.update { it.copy(isHapticsEnabled = !it.isHapticsEnabled) }
-    }
-
-    fun setManualHeading(degrees: Float) {
-        sensorManager.setManualAzimuth(degrees)
     }
 
     override fun onCleared() {

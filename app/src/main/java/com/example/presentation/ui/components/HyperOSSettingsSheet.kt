@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -127,6 +126,17 @@ fun HyperOSSettingsSheet(
                             onDismiss()
                             onOpenCalibration()
                         }
+                    )
+
+                    HorizontalDivider(color = HyperOSBorder.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Sensor Simulation Toggle
+                    SettingsSwitchRow(
+                        title = "Simulation Demo Mode",
+                        subtitle = "Simulate motion when sensors are unavailable",
+                        icon = Icons.Default.Sensors,
+                        checked = uiState.isSimulated,
+                        onCheckedChange = { onToggleSimulation() }
                     )
                 }
             }

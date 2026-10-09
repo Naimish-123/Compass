@@ -26,7 +26,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,15 +40,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.CalibrationWarningYellow
-import com.example.ui.theme.CardinalCyan
-import com.example.ui.theme.LevelBubbleGreen
-import com.example.ui.theme.SlateBackground
-import com.example.ui.theme.SlateBorder
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.HyperOSBorder
+import com.example.ui.theme.HyperOSSurfaceElevated
+import com.example.ui.theme.HyperOSTextPrimary
+import com.example.ui.theme.HyperOSTextSecondary
+import com.example.ui.theme.XiaomiMint
+import com.example.ui.theme.XiaomiRed
+import com.example.ui.theme.XiaomiYellow
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -72,14 +69,14 @@ fun CalibrationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SlateSurface,
+        containerColor = HyperOSSurfaceElevated,
         shape = RoundedCornerShape(20.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.WarningAmber,
                     contentDescription = null,
-                    tint = CalibrationWarningYellow,
+                    tint = XiaomiYellow,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -87,7 +84,7 @@ fun CalibrationDialog(
                     text = "Calibrate Compass",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = HyperOSTextPrimary
                     )
                 )
             }
@@ -99,7 +96,7 @@ fun CalibrationDialog(
             ) {
                 Text(
                     text = "Move your device in a smooth figure-8 motion in the air to eliminate local magnetic interference.",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
+                    style = MaterialTheme.typography.bodyMedium.copy(color = HyperOSTextSecondary),
                     textAlign = TextAlign.Center
                 )
 
@@ -138,7 +135,7 @@ fun CalibrationDialog(
 
                         drawPath(
                             path = path,
-                            color = SlateBorder,
+                            color = HyperOSBorder,
                             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
                         )
 
@@ -148,12 +145,12 @@ fun CalibrationDialog(
                         val dotY = cy + (a * sin(progress) * cos(progress)) / denomP
 
                         drawCircle(
-                            color = CardinalCyan.copy(alpha = 0.35f),
+                            color = XiaomiRed.copy(alpha = 0.35f),
                             radius = 12.dp.toPx(),
                             center = Offset(dotX, dotY)
                         )
                         drawCircle(
-                            color = CardinalCyan,
+                            color = XiaomiRed,
                             radius = 6.dp.toPx(),
                             center = Offset(dotX, dotY)
                         )
@@ -169,9 +166,9 @@ fun CalibrationDialog(
 
                 // Current Sensor Accuracy Status
                 val (accuracyStatus, statusColor) = when (accuracy) {
-                    android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> "Sensor Calibrated: High" to LevelBubbleGreen
-                    android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> "Sensor Accuracy: Medium" to CardinalCyan
-                    android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW -> "Sensor Accuracy: Low" to CalibrationWarningYellow
+                    android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> "Sensor Calibrated: High" to XiaomiMint
+                    android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> "Sensor Accuracy: Medium" to XiaomiYellow
+                    android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW -> "Sensor Accuracy: Low" to XiaomiYellow
                     else -> "Sensor Status: Unreliable" to Color(0xFFEF4444)
                 }
 
@@ -196,10 +193,10 @@ fun CalibrationDialog(
         confirmButton = {
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = CardinalCyan),
+                colors = ButtonDefaults.buttonColors(containerColor = XiaomiRed),
                 modifier = Modifier.testTag("dismiss_calibration_button")
             ) {
-                Text(text = "Done", color = Color(0xFF0F172A), fontWeight = FontWeight.Bold)
+                Text(text = "Done", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     )
